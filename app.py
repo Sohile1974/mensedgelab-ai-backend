@@ -3,7 +3,6 @@ import openai
 import os
 
 app = Flask(__name__)
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/evaluate-photo", methods=["POST"])
 def analyze_photo():
@@ -16,9 +15,10 @@ def analyze_photo():
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=data["messages"]
+            messages=data["messages"],
+            timeout=25  # ⏱️ Prevent long hangs
         )
-        return jsonify(response.choices[0].message.dict())
+        return jsonify(response.choices[0].message.dict())  # Return clean message object
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -28,3 +28,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
