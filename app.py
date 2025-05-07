@@ -13,7 +13,7 @@ def analyze_photo():
         return jsonify({"error": "'messages' field is missing."}), 400
 
     try:
-        client = openai.OpenAI()
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=data["messages"]
@@ -28,4 +28,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
