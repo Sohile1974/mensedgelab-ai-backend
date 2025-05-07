@@ -1,6 +1,6 @@
+from flask import Flask, request, jsonify
 import openai
 import os
-from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -13,12 +13,12 @@ def analyze_photo():
         return jsonify({"error": "'messages' field is missing."}), 400
 
     try:
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4o",
-            messages=data["messages"],
-            timeout=25  # set a timeout (in seconds)
+            messages=data["messages"]
         )
-        return jsonify(response["choices"][0]["message"])
+        return jsonify(response.choices[0].message.dict())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
