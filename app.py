@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 @app.route("/evaluate-photo", methods=["POST"])
-def analyze_photo():
+def evaluate_photo():
     try:
         print("✅ Received POST request to /evaluate-photo")
 
@@ -16,28 +16,78 @@ def analyze_photo():
             print("❌ 'messages' field is missing.")
             return make_response(jsonify({"error": "'messages' field is missing."}), 400)
 
-        # Initialize OpenAI client
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        print("⏳ Sending request to OpenAI...")
+        # Extract user data from the first message
+        content_items = data["messages"][0]["content"]
+        text_block = next(item for item in content_items if item["type"] == "text")
+        image_block = next(item for item in content_items if item["type"] == "image_url")
 
-        response = client.chat.completions.create(
+        user_prompt = text_block["text"]
+        image_url = image_block["image_url"]["url"]
+
+        # Step 1 – Describe the body visually (image only)
+        step1_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Describe the body in this image in terms of visible fat distribution, muscle tone, body shape, and posture. Do not make assumptions about health or identity."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url
+                        }
+                    }
+                ]
+            }
+        ]
+
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        print("⏳ Calling GPT Step 1 (Image Description)...")
+        step1_response = client.chat.completions.create(
             model="gpt-4o",
-            messages=data["messages"],
-            timeout=25  # Prevent long processing delays
+            messages=step1_messages,
+            timeout=20
+        )
+        visual_summary = step1_response.choices[0].message.content
+        print("📸 Step 1 image summary:", visual_summary)
+
+        # Step 2 – Final fitness evaluation using visual + metrics
+        step2_prompt = f"""
+This is a fitness evaluation request. Use the following image-based description to guide your analysis:
+"{visual_summary}"
+
+Now, also consider the user's metrics:
+- Age: Extract from text: {user_prompt}
+- Goal: Extract from text: {user_prompt}
+
+Provide a strict, medically realistic fitness evaluation focused on posture, body composition, fat loss, and muscle gain. Be direct and goal-oriented.
+"""
+
+        step2_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": step2_prompt
+                    }
+                ]
+            }
+        ]
+
+        print("⏳ Calling GPT Step 2 (Final Report)...")
+        step2_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=step2_messages,
+            timeout=25
         )
 
-        result = {
-            "choices": [
-                response.choices[0].message.dict()
-            ]
-        }
+        final_report = step2_response.choices[0].message.content
+        print("✅ Final AI Report:", final_report)
 
-        print("✅ GPT result:", result)
-
-        # Send back a proper JSON response
-        res = make_response(jsonify(result), 200)
-        res.headers["Content-Type"] = "application/json"
-        return res
+        return make_response(jsonify({"content": final_report}), 200)
 
     except Exception as e:
         print("🔥 Error occurred:", str(e))
@@ -49,3 +99,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
