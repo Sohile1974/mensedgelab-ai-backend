@@ -48,21 +48,27 @@ def evaluate_photo():
         step1_response = client.chat.completions.create(
             model="gpt-4o",
             messages=step1_messages,
-            timeout=20
+            timeout=15
         )
+
         visual_summary = step1_response.choices[0].message.content
         print("📸 Step 1 image summary:", visual_summary)
+
+        # Check for refusal in Step 1
+        if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
+            fallback = "⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique in a fitness-appropriate context."
+            print("🚫 Image was refused by GPT. Returning fallback.")
+            return make_response(jsonify({"content": fallback}), 200)
 
         # Step 2 – Final fitness evaluation using visual + metrics
         step2_prompt = f"""
 This is a fitness evaluation request. Use the following image-based description to guide your analysis:
 "{visual_summary}"
 
-Now, also consider the user's metrics:
-- Age: Extract from text: {user_prompt}
-- Goal: Extract from text: {user_prompt}
+Now, also consider the user's input:
+- {user_prompt}
 
-Provide a strict, medically realistic fitness evaluation focused on posture, body composition, fat loss, and muscle gain. Be direct and goal-oriented.
+Provide a medically realistic, strict, and goal-focused fitness evaluation. Address posture, body composition, fat loss, and muscle gain. Avoid disclaimers. Be direct, detailed, and serious in tone.
 """
 
         step2_messages = [
@@ -81,7 +87,7 @@ Provide a strict, medically realistic fitness evaluation focused on posture, bod
         step2_response = client.chat.completions.create(
             model="gpt-4o",
             messages=step2_messages,
-            timeout=25
+            timeout=15
         )
 
         final_report = step2_response.choices[0].message.content
