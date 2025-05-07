@@ -9,11 +9,19 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 @app.route("/evaluate-photo", methods=["POST"])
 def analyze_photo():
     data = request.get_json()
-    response = openai.ChatCompletion.create(
-        model="gpt-4o",
-        messages=data["messages"]
-    )
-    return jsonify(response["choices"][0]["message"])
+
+    # Validate input
+    if not data or "messages" not in data:
+        return jsonify({"error": "'messages' field is missing in the request."}), 400
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=data["messages"]
+        )
+        return jsonify(response["choices"][0]["message"])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/", methods=["GET"])
 def index():
