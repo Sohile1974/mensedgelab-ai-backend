@@ -61,5 +61,48 @@ def evaluate_photo():
             return make_response(jsonify({"content": fallback}), 200)
 
         # Step 2 – Final fitness evaluation using visual + metrics
-        step2_prompt = f"""
-T
+        step2_prompt = f"""This is a fitness evaluation request. Use the following image-based description to guide your analysis:
+"{visual_summary}"
+
+Now, also consider the user's input:
+- {user_prompt}
+
+Provide a medically realistic, strict, and goal-focused fitness evaluation. Address posture, body composition, fat loss, and muscle gain. Avoid disclaimers. Be direct, detailed, and serious in tone."""
+
+        step2_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": step2_prompt
+                    }
+                ]
+            }
+        ]
+
+        print("⏳ Calling GPT Step 2 (Final Report)...")
+        try:
+            step2_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=step2_messages,
+                timeout=12
+            )
+            final_report = step2_response.choices[0].message.content
+            print("✅ Final AI Report:", final_report)
+        except Exception as e:
+            print("🔥 GPT Step 2 failed:", str(e))
+            final_report = "⚠️ We encountered an error generating your fitness evaluation. Please try again shortly or submit a new image."
+
+        return make_response(jsonify({"content": final_report}), 200)
+
+    except Exception as e:
+        print("🔥 Error occurred:", str(e))
+        return make_response(jsonify({"error": str(e)}), 500)
+
+@app.route("/", methods=["GET"])
+def index():
+    return "Men's Edge Lab AI backend is running."
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
