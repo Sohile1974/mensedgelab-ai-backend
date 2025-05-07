@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-@app.route("/", methods=["POST"])
+@app.route("/evaluate-photo", methods=["POST"])
 def analyze_photo():
     data = request.get_json()
     response = openai.ChatCompletion.create(
@@ -21,3 +21,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
