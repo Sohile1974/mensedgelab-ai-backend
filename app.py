@@ -16,9 +16,14 @@ def analyze_photo():
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=data["messages"],
-            timeout=25  # ⏱️ Prevent long hangs
+            timeout=25
         )
-        return jsonify(response.choices[0].message.dict())  # Return clean message object
+        # Return structured response for Zapier compatibility
+        return jsonify({
+            "choices": [
+                response.choices[0].message.dict()
+            ]
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
