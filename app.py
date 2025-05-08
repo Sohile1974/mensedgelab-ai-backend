@@ -36,7 +36,7 @@ def evaluate_photo():
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         # Step 1 – Image description
-        step1_prompt_primary = """Please describe the person's body in this image, noting posture, body shape, muscle tone, and visible fat distribution. Keep your description direct and neutral, without assuming identity."""
+        step1_prompt_primary = """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         step1_prompt_fallback = """Describe the person in this image, including general body type, stance, posture, and muscle/fat visibility. Keep the tone factual and observational only."""
 
         step1_messages = lambda prompt_text: [
