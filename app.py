@@ -1,74 +1,65 @@
 from flask import Flask, request, jsonify
-import os
 import openai
-from dotenv import load_dotenv
-
-load_dotenv()
+import os
 
 app = Flask(__name__)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Set your OpenAI API key
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-@app.route("/")
-def home():
-    return "Men's Edge Lab AI backend is running"
+@app.route('/evaluate', methods=['POST'])
+def evaluate():
+    data = request.json
+    image_url = data.get("image_url")
+    age = data.get("age")
+    height = data.get("height")
+    weight = data.get("weight")
+    goal = data.get("goal")
 
-@app.route("/evaluate-photo", methods=["POST"])
-def evaluate_photo():
-    try:
-        data = request.json
-        print("🧩 Received data:", data)
+    if not image_url:
+        return jsonify({"error": "Image URL missing"}), 400
 
-        messages = data.get("messages", [])
-        if not messages:
-            return jsonify({"error": "Missing messages"}), 400
+    # Step 1: Image analysis
+    step1_prompt = [
+        {"role": "system", "content": "You are a fitness assessment expert. Describe the body in the image in neutral, clinical detail (no assumptions)."},
+        {"role": "user", "content": f"Describe the body in this image: {image_url}"}
+    ]
 
-        # Step 1: Get image description
-        print("⏳ Calling GPT Step 1 (Image Description)...")
-        step1_response = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-        )
-        image_description = step1_response.choices[0].message.content.strip()
-        print("📸 Step 1 image summary:", image_description)
+    step1_response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=step1_prompt
+    )
+    image_description = step1_response.choices[0].message.content.strip()
 
-        # Step 2: Generate full evaluation
-        print("⏳ Calling GPT Step 2 (Final Report)...")
-        step2_prompt = f"""
-This is a fitness evaluation request.
-
-Image summary:
+    # Step 2: Full evaluation with user inputs
+    step2_prompt = [
+        {"role": "system", "content": "You are a strict, medically realistic fitness and health coach creating a photo-based evaluation report."},
+        {"role": "user", "content": f"""
+Image description:
 {image_description}
 
-User physical data and goals:
-{messages[0]['content'][0]['text']}
+User data:
+- Age: {age or 'not provided'}
+- Height: {height or 'not provided'}
+- Weight: {weight or 'not provided'}
+- Goal: {goal or 'not provided'}
 
-Please write a structured, medically-informed body photo evaluation focusing on:
-1. Posture
-2. Visible Fat Distribution
-3. Muscle Definition
-4. Overall Body Composition
+Write a personalized body evaluation report based on the image and data. Use bullet points. If the image is unclear or not suitable, return a professional fallback message. If data is missing, use your judgment to give useful advice. The tone should be strict but motivating. Structure it into:
+1. Overall Impression
+2. Health Risk Analysis
+3. Fat vs. Muscle Assessment
+4. Customized Goals (generate if user left it blank)
+5. Recommended Nutrition
+6. Next Steps
+"""}]
 
-End with a clear conclusion and motivational tone. Be realistic, professional, and detailed.
-"""
+    step2_response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=step2_prompt
+    )
+    final_report = step2_response.choices[0].message.content.strip()
 
-        step2_response = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "user", "content": step2_prompt}
-            ]
-        )
-        ai_report_content = step2_response.choices[0].message.content.strip()
-        print("✅ Final AI Report:", ai_report_content)
+    return jsonify({"report": final_report})
 
-        return jsonify({
-            "status": "success",
-            "report": ai_report_content
-        })
-
-    except Exception as e:
-        print("❌ Error:", str(e))
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
