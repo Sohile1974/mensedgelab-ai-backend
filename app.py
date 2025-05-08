@@ -4,25 +4,37 @@ import os
 
 app = Flask(__name__)
 
-# Set your OpenAI API key
+# Set your OpenAI API key from environment variable
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-@app.route('/evaluate-photo', methods=['POST'])  # <-- Route corrected here
+@app.route('/evaluate-photo', methods=['POST'])
 def evaluate_photo():
     data = request.json
+
+    # Log received data for debugging (optional)
+    print("Received data:", data)
+
+    # Extract fields
     image_url = data.get("image_url")
     age = data.get("age")
     height = data.get("height")
     weight = data.get("weight")
     goal = data.get("goal")
 
-    if not image_url:
-        return jsonify({"error": "Image URL missing"}), 400
+    # Updated check: tolerate empty or weird image fields unless obviously invalid
+    if image_url is None or not str(image_url).startswith("http"):
+        return jsonify({"error": "Image URL missing or invalid"}), 400
 
-    # Step 1: Analyze the image
+    # Step 1: Describe image
     step1_prompt = [
-        {"role": "system", "content": "You are a fitness assessment expert. Describe the body in the image in neutral, clinical detail (no assumptions)."},
-        {"role": "user", "content": f"Describe the body in this image: {image_url}"}
+        {
+            "role": "system",
+            "content": "You are a fitness assessment expert. Describe the body in the image in neutral, clinical detail (no assumptions)."
+        },
+        {
+            "role": "user",
+            "content": f"Describe the body in this image: {image_url}"
+        }
     ]
 
     step1_response = openai.ChatCompletion.create(
@@ -31,10 +43,15 @@ def evaluate_photo():
     )
     image_description = step1_response.choices[0].message.content.strip()
 
-    # Step 2: Create the full personalized report
+    # Step 2: Full report with data
     step2_prompt = [
-        {"role": "system", "content": "You are a strict, medically realistic fitness and health coach creating a photo-based evaluation report."},
-        {"role": "user", "content": f"""
+        {
+            "role": "system",
+            "content": "You are a strict, medically realistic fitness and health coach creating a photo-based evaluation report."
+        },
+        {
+            "role": "user",
+            "content": f"""
 Image description:
 {image_description}
 
@@ -51,7 +68,8 @@ Write a personalized body evaluation report based on the image and data. Use bul
 4. Customized Goals (generate if user left it blank)
 5. Recommended Nutrition
 6. Next Steps
-"""}
+"""
+        }
     ]
 
     step2_response = openai.ChatCompletion.create(
