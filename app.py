@@ -1,108 +1,74 @@
-from flask import Flask, request, jsonify, make_response
-import openai
+from flask import Flask, request, jsonify
 import os
+import openai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+@app.route("/")
+def home():
+    return "Men's Edge Lab AI backend is running"
 
 @app.route("/evaluate-photo", methods=["POST"])
 def evaluate_photo():
     try:
-        print("✅ Received POST request to /evaluate-photo")
-
-        data = request.get_json(force=True)
+        data = request.json
         print("🧩 Received data:", data)
 
-        if not data or "messages" not in data:
-            print("❌ 'messages' field is missing.")
-            return make_response(jsonify({"error": "'messages' field is missing."}), 400)
+        messages = data.get("messages", [])
+        if not messages:
+            return jsonify({"error": "Missing messages"}), 400
 
-        # Extract user data from the first message
-        content_items = data["messages"][0]["content"]
-        text_block = next(item for item in content_items if item["type"] == "text")
-        image_block = next(item for item in content_items if item["type"] == "image_url")
-
-        user_prompt = text_block["text"]
-        image_url = image_block["image_url"]["url"]
-
-        # Step 1 – Describe the body visually (image only)
-        step1_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Describe the body in this image in terms of visible fat distribution, muscle tone, body shape, and posture. Do not make assumptions about health or identity."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_url
-                        }
-                    }
-                ]
-            }
-        ]
-
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # Step 1: Get image description
         print("⏳ Calling GPT Step 1 (Image Description)...")
-        step1_response = client.chat.completions.create(
+        step1_response = openai.chat.completions.create(
             model="gpt-4o",
-            messages=step1_messages,
-            timeout=12
+            messages=messages,
         )
+        image_description = step1_response.choices[0].message.content.strip()
+        print("📸 Step 1 image summary:", image_description)
 
-        visual_summary = step1_response.choices[0].message.content
-        print("📸 Step 1 image summary:", visual_summary)
-
-        # Check for refusal in Step 1
-        if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
-            fallback = "⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique in a fitness-appropriate context."
-            print("🚫 Image was refused by GPT. Returning fallback.")
-            return make_response(jsonify({"content": fallback}), 200)
-
-        # Step 2 – Final fitness evaluation using visual + metrics
-        step2_prompt = f"""This is a fitness evaluation request. Use the following image-based description to guide your analysis:
-"{visual_summary}"
-
-Now, also consider the user's input:
-- {user_prompt}
-
-Provide a medically realistic, strict, and goal-focused fitness evaluation. Address posture, body composition, fat loss, and muscle gain. Avoid disclaimers. Be direct, detailed, and serious in tone."""
-
-        step2_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": step2_prompt
-                    }
-                ]
-            }
-        ]
-
+        # Step 2: Generate full evaluation
         print("⏳ Calling GPT Step 2 (Final Report)...")
-        try:
-            step2_response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=step2_messages,
-                timeout=12
-            )
-            final_report = step2_response.choices[0].message.content
-            print("✅ Final AI Report:", final_report)
-        except Exception as e:
-            print("🔥 GPT Step 2 failed:", str(e))
-            final_report = "⚠️ We encountered an error generating your fitness evaluation. Please try again shortly or submit a new image."
+        step2_prompt = f"""
+This is a fitness evaluation request.
 
-        return make_response(jsonify({"content": final_report}), 200)
+Image summary:
+{image_description}
+
+User physical data and goals:
+{messages[0]['content'][0]['text']}
+
+Please write a structured, medically-informed body photo evaluation focusing on:
+1. Posture
+2. Visible Fat Distribution
+3. Muscle Definition
+4. Overall Body Composition
+
+End with a clear conclusion and motivational tone. Be realistic, professional, and detailed.
+"""
+
+        step2_response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "user", "content": step2_prompt}
+            ]
+        )
+        ai_report_content = step2_response.choices[0].message.content.strip()
+        print("✅ Final AI Report:", ai_report_content)
+
+        return jsonify({
+            "status": "success",
+            "report": ai_report_content
+        })
 
     except Exception as e:
-        print("🔥 Error occurred:", str(e))
-        return make_response(jsonify({"error": str(e)}), 500)
-
-@app.route("/", methods=["GET"])
-def index():
-    return "Men's Edge Lab AI backend is running."
+        print("❌ Error:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(debug=True)
