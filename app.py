@@ -1,44 +1,142 @@
-step2_prompt = f"""You are generating a personalized HTML fitness report based on a user's image and physical data.
+from flask import Flask, request, make_response
+import openai
+import os
+import re
 
-User Profile:
-- Age: {user_age or 'Not provided'}
-- Height: {user_height or 'Not provided'} cm
-- Weight: {user_weight or 'Not provided'} kg
-- BMI: {bmi:.1f} {"(calculated)" if bmi else ""}
+app = Flask(__name__)
 
-Image Summary:
-"{visual_summary}"
+def extract_number_from_text(text, key):
+    pattern = rf"{key}[^0-9]*(\d+)"
+    match = re.search(pattern, text, re.IGNORECASE)
+    return int(match.group(1)) if match else None
 
-Now write a clear, HTML-formatted fitness evaluation report using the structure below. Use <strong> for titles, <br> for spacing, and <ul>/<li> for bullet points.
+@app.route("/evaluate-photo", methods=["POST"])
+def evaluate_photo():
+    try:
+        print("✅ Received POST request to /evaluate-photo")
+
+        data = request.get_json(force=True)
+        print("🧩 Received data:", data)
+
+        if not data or "messages" not in data:
+            print("❌ 'messages' field is missing.")
+            return make_response("❌ 'messages' field is missing.", 400)
+
+        content_items = data["messages"][0]["content"]
+        text_block = next(item for item in content_items if item["type"] == "text")
+        image_block = next(item for item in content_items if item["type"] == "image_url")
+
+        user_prompt = text_block["text"].strip()
+        image_url = image_block["image_url"]["url"].strip()
+
+        if len(user_prompt) > 500:
+            user_prompt = user_prompt[:500] + "..."
+
+        user_age = extract_number_from_text(user_prompt, "age")
+        user_height = extract_number_from_text(user_prompt, "height")
+        user_weight = extract_number_from_text(user_prompt, "weight")
+        bmi = (user_weight / ((user_height / 100) ** 2)) if user_height and user_weight else 0.0
+
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        step1_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe the body in this image in terms of visible fat distribution, muscle tone, body shape, and posture. Do not make assumptions about health or identity."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+
+        print("⏳ Calling GPT Step 1 (Image Description)...")
+        try:
+            step1_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=step1_messages,
+                timeout=12
+            )
+            visual_summary = step1_response.choices[0].message.content.strip()
+            print("📸 Step 1 image summary:", visual_summary)
+        except Exception as e:
+            print("🔥 GPT Step 1 failed:", str(e))
+            return make_response("⚠️ Image analysis failed. Please submit a clear, full-body fitness-style photo.", 200)
+
+        if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
+            return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
+
+        step2_prompt = f"""You are generating a personalized HTML fitness report based on a user's image and physical data.
+
+<strong>User Profile</strong><br>
+Age: {user_age or 'Not provided'}<br>
+Height: {user_height or 'Not provided'} cm<br>
+Weight: {user_weight or 'Not provided'} kg<br>
+BMI: {bmi:.1f} {"(calculated)" if bmi else ""}<br><br>
+
+<strong>Image Summary</strong><br>
+{visual_summary}<br><br>
+
+Now write a clean, HTML-formatted fitness report using this structure:<br><br>
 
 <strong>Overall Impression</strong><br>
-[Short summary of posture, body shape, and muscle tone.]<br><br>
+[Brief summary of posture, body type, and muscle tone.]<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-[Evaluate age, weight, BMI risks. Mention visceral fat, lifestyle risks.]<br><br>
+[Discuss age- and BMI-related risks, fat distribution, and warning signs.]<br><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-[Compare visible body fat and muscular development. What’s missing?]<br><br>
+[Evaluate fat levels and muscle development. Use numeric ranges if appropriate.]<br><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li>Set realistic fitness goals for the user.</li>
-<li>Include fat loss %, muscle gain, or mobility targets.</li>
+<li>Fat loss % or BMI target</li>
+<li>Muscle tone focus or posture corrections</li>
+<li>General appearance or symmetry goal</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Calories range (e.g., 500–700 kcal deficit if needed)</li>
-<li>Macronutrient tips (e.g., protein intake, fiber, carbs)</li>
-<li>Food types to increase/avoid</li>
+<li>Calories: deficit/surplus estimate</li>
+<li>Protein, fiber, fat distribution tips</li>
+<li>Food examples to favor or reduce</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li>Workout type, frequency, focus</li>
-<li>Key metrics to track</li>
-<li>Suggested schedule or tools</li>
+<li>Weekly training schedule suggestion</li>
+<li>Measurements or progress to track</li>
+<li>Optional: coaching or assessment plan</li>
 </ul>
 
-Be strict but motivational. Keep tone serious, direct, and no unnecessary disclaimers.
+Use <strong> for section headers, <ul> for lists, and <br> to separate paragraphs. Be serious, motivational, and medically realistic.
 """
+
+        step2_messages = [
+            {"role": "user", "content": [{"type": "text", "text": step2_prompt}]}
+        ]
+
+        print("⏳ Calling GPT Step 2 (Final Report)...")
+        try:
+            step2_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=step2_messages,
+                timeout=15
+            )
+            final_report = step2_response.choices[0].message.content.strip()
+            print("✅ Final Report Generated.")
+        except Exception as e:
+            print("🔥 GPT Step 2 failed:", str(e))
+            final_report = "⚠️ We encountered an error generating your evaluation. Please try again shortly."
+
+        return make_response(final_report, 200)
+
+    except Exception as e:
+        print("🔥 Unexpected error:", str(e))
+        return make_response(f"⚠️ Internal server error: {str(e)}", 500)
+
+@app.route("/", methods=["GET"])
+def index():
+    return "Men's Edge Lab AI backend is running."
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
