@@ -40,7 +40,8 @@ def evaluate_photo():
                 "content": [
                     {
                         "type": "text",
-                        "text": "Kindly describe the person's physique in this image, focusing on visible fat distribution, muscle tone, posture, and overall body shape. Use clear anatomical observations, and avoid personal or medical assumptions."
+                        "text": "Describe the body in this image in terms of visible fat distribution, muscle tone, body shape, and posture. Do not make assumptions about health or identity."
+
                     },
                     {
                         "type": "image_url",
