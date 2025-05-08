@@ -5,11 +5,6 @@ import re
 
 app = Flask(__name__)
 
-def extract_number_from_text(text, key):
-    pattern = rf"{key}[^0-9]*(\d+)"
-    match = re.search(pattern, text, re.IGNORECASE)
-    return int(match.group(1)) if match else None
-
 @app.route("/evaluate-photo", methods=["POST"])
 def evaluate_photo():
     try:
@@ -32,13 +27,15 @@ def evaluate_photo():
         if len(user_prompt) > 500:
             user_prompt = user_prompt[:500] + "..."
 
-        user_age = extract_number_from_text(user_prompt, "age")
-        user_height = extract_number_from_text(user_prompt, "height")
-        user_weight = extract_number_from_text(user_prompt, "weight")
+        # ✅ Improved metric extraction from natural text
+        user_age = int(re.search(r"user is (\d+)", user_prompt).group(1)) if re.search(r"user is (\d+)", user_prompt) else None
+        user_height = int(re.search(r"(\d+)\s*cm", user_prompt).group(1)) if re.search(r"(\d+)\s*cm", user_prompt) else None
+        user_weight = int(re.search(r"weighs (\d+)", user_prompt).group(1)) if re.search(r"weighs (\d+)", user_prompt) else None
         bmi = (user_weight / ((user_height / 100) ** 2)) if user_height and user_weight else 0.0
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+        # Step 1 – Image description
         step1_messages = [
             {
                 "role": "user",
@@ -65,7 +62,8 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        step2_prompt = f"""You are generating a personalized HTML fitness report based on a user's image and physical data.
+        # Step 2 – Final report generation
+        step2_prompt = f"""You are generating a personalized HTML fitness evaluation report based on a user's body image and self-reported physical data.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -76,39 +74,37 @@ BMI: {bmi:.1f} {"(calculated)" if bmi else ""}<br><br>
 <strong>Image Summary</strong><br>
 {visual_summary}<br><br>
 
-Now write a clean, HTML-formatted fitness report using this structure:<br><br>
+Now return only the fitness evaluation body using this exact structure with <strong>, <br>, <ul>, <li>. Do NOT include full HTML like <html>, <head>, or <body> tags.
 
 <strong>Overall Impression</strong><br>
-[Brief summary of posture, body type, and muscle tone.]<br><br>
+[Summary of posture, body shape, tone]<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-[Discuss age- and BMI-related risks, fat distribution, and warning signs.]<br><br>
+[Address age, weight, and BMI risks]<br><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-[Evaluate fat levels and muscle development. Use numeric ranges if appropriate.]<br><br>
+[Evaluate visible composition]<br><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li>Fat loss % or BMI target</li>
-<li>Muscle tone focus or posture corrections</li>
-<li>General appearance or symmetry goal</li>
+<li>Fat loss target</li>
+<li>Muscle gain or tone improvement</li>
+<li>Corrective posture or balance</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Calories: deficit/surplus estimate</li>
-<li>Protein, fiber, fat distribution tips</li>
-<li>Food examples to favor or reduce</li>
+<li>Calorie guidelines</li>
+<li>Macronutrient balance</li>
+<li>Food types to focus on</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li>Weekly training schedule suggestion</li>
-<li>Measurements or progress to track</li>
-<li>Optional: coaching or assessment plan</li>
+<li>Training schedule</li>
+<li>Progress tracking tips</li>
+<li>Optional coaching or plan refinement</li>
 </ul>
-
-Use <strong> for section headers, <ul> for lists, and <br> to separate paragraphs. Be serious, motivational, and medically realistic.
 """
 
         step2_messages = [
