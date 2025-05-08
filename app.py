@@ -9,7 +9,6 @@ app = Flask(__name__)
 def evaluate_photo():
     try:
         print("✅ Received POST request to /evaluate-photo")
-
         data = request.get_json(force=True)
         print("🧩 Received data:", data)
 
@@ -27,11 +26,11 @@ def evaluate_photo():
         if len(user_prompt) > 500:
             user_prompt = user_prompt[:500] + "..."
 
-        # Metric extraction
-        user_age = int(re.search(r"user is (\d+)", user_prompt).group(1)) if re.search(r"user is (\d+)", user_prompt) else None
+        # Clean and extract metrics
+        user_age = int(re.search(r"user is (\d+)", user_prompt, re.IGNORECASE).group(1)) if re.search(r"user is (\d+)", user_prompt, re.IGNORECASE) else None
         user_height = int(re.search(r"(\d+)\s*cm", user_prompt).group(1)) if re.search(r"(\d+)\s*cm", user_prompt) else None
-        user_weight = int(re.search(r"weighs (\d+)", user_prompt).group(1)) if re.search(r"weighs (\d+)", user_prompt) else None
-        bmi = (user_weight / ((user_height / 100) ** 2)) if user_height and user_weight else 0.0
+        user_weight = int(re.search(r"weighs (\d+)", user_prompt, re.IGNORECASE).group(1)) if re.search(r"weighs (\d+)", user_prompt, re.IGNORECASE) else None
+        bmi = round(user_weight / ((user_height / 100) ** 2), 1) if user_height and user_weight else 0.0
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -50,16 +49,24 @@ def evaluate_photo():
                 {"type": "image_url", "image_url": {"url": image_url}}
             ]}]
 
-
-        print("⏳ Calling GPT Step 1 (Image Description)...")
+        print("⏳ Calling GPT Step 1...")
         try:
             step1_response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=step1_messages,
+                messages=build_step1(step1_prompt_primary),
                 timeout=12
             )
             visual_summary = step1_response.choices[0].message.content.strip()
-            print("📸 Step 1 image summary:", visual_summary)
+
+            if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
+                print("⚠️ Primary prompt failed, retrying with fallback...")
+                step1_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=build_step1(step1_prompt_fallback),
+                    timeout=12
+                )
+                visual_summary = step1_response.choices[0].message.content.strip()
+
         except Exception as e:
             print("🔥 GPT Step 1 failed:", str(e))
             return make_response("⚠️ Image analysis failed. Please submit a clear, full-body fitness-style photo.", 200)
@@ -67,62 +74,58 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # Step 2 – Enhanced AI Evaluation
-        step2_prompt = f"""You are an advanced AI fitness expert. Your job is to generate a personalized body evaluation report for a male client based on photo analysis and physical data. Be direct, professional, and goal-focused — like a serious trainer.
+        # Step 2 – Generate HTML report
+        step2_prompt = f"""You are an advanced AI fitness expert. Generate a detailed HTML fitness evaluation based on this visual analysis and personal data.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
 Height: {user_height or 'Not provided'} cm<br>
 Weight: {user_weight or 'Not provided'} kg<br>
-BMI: {bmi:.1f} {"(calculated)" if bmi else ""}<br><br>
+BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 
 <strong>Image Summary</strong><br>
 {visual_summary}<br><br>
 
 <strong>Overall Impression</strong><br>
-Comment on body shape, fat visibility, posture alignment, and general muscle distribution. Mention any noticeable imbalances or symmetry concerns.<br><br>
+Summarize the person's physique, posture, visible fat distribution, and symmetry.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-Refer to BMI and age to evaluate cardiovascular, metabolic, or mobility-related risk. Be realistic — if abdominal obesity or poor posture affects risk, say so clearly.<br><br>
+Evaluate based on BMI and age. Address cardiovascular, metabolic, or orthopedic risks like abdominal obesity, posture issues, or joint strain.<br><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-Compare fat vs muscle visibly across regions: abdomen, chest, shoulders, legs. Note any dominance or underdevelopment.<br><br>
+Compare fat/muscle across abdomen, chest, arms, back, and legs. Note underdeveloped or dominant areas.<br><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss Target:</strong> Based on the user's BMI and visual data, give a specific kg or percentage fat reduction goal. State where fat loss is needed most (e.g., abdominal, lower back).</li>
-<li><strong>Muscle Gain Focus:</strong> Recommend focus areas (e.g., chest, arms, upper back) to improve physique and performance. Link this to visual analysis and training approach.</li>
-<li><strong>Posture/Mobility:</strong> If the image shows shoulder slouch, pelvic tilt, or poor stance, recommend strength or mobility work to correct it.</li>
+<li><strong>Fat Loss Target:</strong> Suggest % body fat or kg reduction with main focus zones.</li>
+<li><strong>Muscle Gain:</strong> Advise target areas based on visual shape.</li>
+<li><strong>Mobility/Posture:</strong> Recommend exercises if poor posture or pelvic tilt is seen.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Target a daily caloric deficit (or surplus if underweight). Estimate range if weight is provided.</li>
-<li>Macronutrient breakdown: prioritize lean protein (1.6–2.2g/kg), moderate carbs, healthy fats.</li>
-<li>Suggest key foods: lean meats, eggs, oats, quinoa, green vegetables. Advise on reducing processed foods, sugar, and liquid calories.</li>
+<li>Daily intake range (deficit/surplus) based on weight.</li>
+<li>Macros: Protein 1.6–2.2g/kg, moderate carbs, healthy fats.</li>
+<li>Foods: chicken, fish, quinoa, oats, dark greens. Avoid sugar, refined oils.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Training Plan:</strong> Start with full-body resistance workouts 3×/week using progressive overload. Each session should include compound lifts (e.g., squats, rows, presses).</li>
-<li><strong>Conditioning:</strong> Add 2 sessions/week of HIIT cardio (20 min max) or fasted morning walks for improved fat metabolism and cardiovascular health.</li>
-<li><strong>Tracking:</strong> Track waist in cm, weight, and progress photos weekly. Adjust food intake if no change over 2–3 weeks.</li>
-<li><strong>Support:</strong> Consider whey protein, creatine, and vitamin D3 if diet or sun exposure is lacking.</li>
+<li><strong>Strength Training:</strong> 3x/week full-body progressive resistance plan.</li>
+<li><strong>Cardio:</strong> 2 HIIT or walk sessions/week.</li>
+<li><strong>Monitoring:</strong> Track photos, waist, and weight weekly. Adjust if plateaued after 3 weeks.</li>
+<li><strong>Support:</strong> Optional whey, creatine, and D3 depending on diet.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
 This report is generated by AI for educational purposes only. It does not constitute medical advice or replace consultation with a licensed professional.
 """
 
-        step2_messages = [
-            {"role": "user", "content": [{"type": "text", "text": step2_prompt}]}
-        ]
-
-        print("⏳ Calling GPT Step 2 (Final Report)...")
+        print("⏳ Calling GPT Step 2...")
         try:
             step2_response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=step2_messages,
+                messages=[{"role": "user", "content": [{"type": "text", "text": step2_prompt}]}],
                 timeout=15
             )
             final_report = step2_response.choices[0].message.content.strip()
