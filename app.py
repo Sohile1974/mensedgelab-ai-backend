@@ -28,26 +28,23 @@ def evaluate_photo():
             user_prompt = user_prompt[:500] + "..."
 
         # Metric extraction
-        user_age = int(re.search(r"user is (\d+)", user_prompt).group(1)) if re.search(r"user is (\d+)", user_prompt) else None
-        user_height = int(re.search(r"(\d+)\s*cm", user_prompt).group(1)) if re.search(r"(\d+)\s*cm", user_prompt) else None
-        user_weight = int(re.search(r"weighs (\d+)", user_prompt).group(1)) if re.search(r"weighs (\d+)", user_prompt) else None
+        user_age = int(re.search(r"user is (\\d+)", user_prompt).group(1)) if re.search(r"user is (\\d+)", user_prompt) else None
+        user_height = int(re.search(r"(\\d+)\\s*cm", user_prompt).group(1)) if re.search(r"(\\d+)\\s*cm", user_prompt) else None
+        user_weight = int(re.search(r"weighs (\\d+)", user_prompt).group(1)) if re.search(r"weighs (\\d+)", user_prompt) else None
         bmi = (user_weight / ((user_height / 100) ** 2)) if user_height and user_weight else 0.0
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         # Step 1 – Image description
-        step1_messages = [
+        step1_prompt_primary = """Please describe the person's body in this image, noting posture, body shape, muscle tone, and visible fat distribution. Keep your description direct and neutral, without assuming identity."""
+        step1_prompt_fallback = """Describe the person in this image, including general body type, stance, posture, and muscle/fat visibility. Keep the tone factual and observational only."""
+
+        step1_messages = lambda prompt_text: [
             {
                 "role": "user",
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "Describe the body in this image in terms of visible fat distribution, muscle tone, body shape, and posture. Do not make assumptions about health or identity."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": image_url}
-                    }
+                    {"type": "text", "text": prompt_text},
+                    {"type": "image_url", "image_url": {"url": image_url}}
                 ]
             }
         ]
@@ -56,11 +53,21 @@ def evaluate_photo():
         try:
             step1_response = client.chat.completions.create(
                 model="gpt-4o",
-                messages=step1_messages,
+                messages=step1_messages(step1_prompt_primary),
                 timeout=12
             )
             visual_summary = step1_response.choices[0].message.content.strip()
             print("📸 Step 1 image summary:", visual_summary)
+
+            if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
+                print("⚠️ Primary prompt failed, retrying with fallback...")
+                step1_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=step1_messages(step1_prompt_fallback),
+                    timeout=12
+                )
+                visual_summary = step1_response.choices[0].message.content.strip()
+
         except Exception as e:
             print("🔥 GPT Step 1 failed:", str(e))
             return make_response("⚠️ Image analysis failed. Please submit a clear, full-body fitness-style photo.", 200)
@@ -68,14 +75,14 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # Step 2 – Enhanced AI Evaluation
+        # Step 2 – Final Report
         step2_prompt = f"""You are an advanced AI fitness expert. Your job is to generate a personalized body evaluation report for a male client based on photo analysis and physical data. Be direct, professional, and goal-focused — like a serious trainer.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
 Height: {user_height or 'Not provided'} cm<br>
 Weight: {user_weight or 'Not provided'} kg<br>
-BMI: {bmi:.1f} {"(calculated)" if bmi else ""}<br><br>
+BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 
 <strong>Image Summary</strong><br>
 {visual_summary}<br><br>
