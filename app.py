@@ -73,8 +73,7 @@ def evaluate_photo():
 
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
-
-        # Step 2 – Enhanced AI Evaluation
+	# Step 2 – Enhanced AI Evaluation
         step2_prompt = f"""You are an advanced AI fitness expert. Your job is to generate a personalized body evaluation report for a male client based on photo analysis and physical data. Be direct, professional, and goal-focused — like a serious trainer.
 
 <strong>User Profile</strong><br>
@@ -150,4 +149,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-0000)
