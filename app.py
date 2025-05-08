@@ -36,9 +36,7 @@ def evaluate_photo():
 
         # Step 1 – Describe image
         step1_prompt_primary = (
-            "Describe the person’s physique in this image for a fitness evaluation. "
-            "This is a professional submission intended for body composition analysis. "
-            "Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context."
+            """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         )
         step1_prompt_fallback = (
             "Describe the person in this image, including general body type, stance, posture, and muscle/fat visibility. "
