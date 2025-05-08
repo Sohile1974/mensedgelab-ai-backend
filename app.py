@@ -1,8 +1,14 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, make_response
 import openai
 import os
+import re
 
 app = Flask(__name__)
+
+def extract_number_from_text(text, key):
+    pattern = rf"{key}[^0-9]*(\d+)"
+    match = re.search(pattern, text, re.IGNORECASE)
+    return int(match.group(1)) if match else None
 
 @app.route("/evaluate-photo", methods=["POST"])
 def evaluate_photo():
@@ -14,9 +20,9 @@ def evaluate_photo():
 
         if not data or "messages" not in data:
             print("❌ 'messages' field is missing.")
-            return make_response(jsonify({"error": "'messages' field is missing."}), 400)
+            return make_response("❌ 'messages' field is missing.", 400)
 
-        # Extract user content blocks
+        # Extract text + image from OpenAI chat format
         content_items = data["messages"][0]["content"]
         text_block = next(item for item in content_items if item["type"] == "text")
         image_block = next(item for item in content_items if item["type"] == "image_url")
@@ -24,13 +30,20 @@ def evaluate_photo():
         user_prompt = text_block["text"].strip()
         image_url = image_block["image_url"]["url"].strip()
 
-        # Auto-trim excessive user input
+        # Auto-trim overly long inputs
         if len(user_prompt) > 500:
             user_prompt = user_prompt[:500] + "..."
 
+        # Extract metrics from user input if available
+        user_age = extract_number_from_text(user_prompt, "age")
+        user_height = extract_number_from_text(user_prompt, "height")  # in cm
+        user_weight = extract_number_from_text(user_prompt, "weight")  # in kg
+
+        bmi = (user_weight / ((user_height / 100) ** 2)) if user_height and user_weight else 0.0
+
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        # Step 1 – Image-based description
+        # Step 1 – Image analysis
         step1_messages = [
             {
                 "role": "user",
@@ -60,41 +73,52 @@ def evaluate_photo():
             print("📸 Step 1 image summary:", visual_summary)
         except Exception as e:
             print("🔥 GPT Step 1 failed:", str(e))
-            fallback = "⚠️ There was a problem analyzing the photo. Please try again with a clearer image."
-            return make_response(jsonify({"content": fallback}), 200)
+            return make_response("⚠️ Image analysis failed. Please submit a clear, full-body fitness-style photo.", 200)
 
-        # Handle GPT refusal
+        # Check if GPT refused to analyze
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
-            fallback = "⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique in a fitness-appropriate context."
-            print("🚫 Image was refused by GPT. Returning fallback.")
-            return make_response(jsonify({"content": fallback}), 200)
+            fallback = "⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique."
+            return make_response(fallback, 200)
 
-        # Step 2 – Full fitness evaluation
-        step2_prompt = f"""This is a fitness evaluation request. Use the following image-based description to guide your analysis:
+        # Step 2 – Full evaluation
+        step2_prompt = f"""You are generating a personalized body evaluation report based on a submitted photo and user-provided metrics.
+
+User Profile:
+- Age: {user_age or 'Not provided'}
+- Height: {user_height or 'Not provided'} cm
+- Weight: {user_weight or 'Not provided'} kg
+- BMI: {bmi:.1f} {"(calculated)" if bmi else ""}
+
+Image Summary:
 "{visual_summary}"
 
-Now, also consider the user's input:
-- {user_prompt}
+Now generate a direct, structured, and medically realistic fitness evaluation using the following format (use line breaks and bold titles):
 
-Provide a medically realistic, strict, and goal-focused fitness evaluation structured with the following sections:
-1. Overall Impression
-2. Health Risk Analysis
-3. Fat vs. Muscle Assessment
-4. Customized Goals
-5. Recommended Nutrition
-6. Next Steps
+**Overall Impression**  
+[Short summary of posture, body shape, and muscular tone.]
 
-Be direct, detailed, and serious in tone. Use bullet points where helpful. Avoid disclaimers or soft language."""
+**Health Risk Analysis**  
+[Discuss visible risks, BMI interpretation, and lifestyle-related concerns.]
+
+**Fat vs. Muscle Assessment**  
+[Evaluate body composition and visible muscle/fat balance.]
+
+**Customized Goals**  
+[Define fat-loss, muscle-gain, or recomposition goals.]
+
+**Recommended Nutrition**  
+[Provide nutrition guidelines for their goal.]
+
+**Next Steps**  
+[Motivating advice with specific training actions.]
+
+Be strict but encouraging. Use bullet points and short paragraphs. Avoid generic disclaimers.
+"""
 
         step2_messages = [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": step2_prompt
-                    }
-                ]
+                "content": [{"type": "text", "text": step2_prompt}]
             }
         ]
 
@@ -103,19 +127,19 @@ Be direct, detailed, and serious in tone. Use bullet points where helpful. Avoid
             step2_response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=step2_messages,
-                timeout=12
+                timeout=15
             )
             final_report = step2_response.choices[0].message.content.strip()
-            print("✅ Final AI Report:", final_report)
+            print("✅ Final Report Generated.")
         except Exception as e:
             print("🔥 GPT Step 2 failed:", str(e))
-            final_report = "⚠️ We encountered an error generating your fitness evaluation. Please try again shortly or submit a new image."
+            final_report = "⚠️ We encountered an error generating your evaluation. Please try again shortly."
 
-        return make_response(jsonify({"content": final_report}), 200)
+        return make_response(final_report, 200)
 
     except Exception as e:
-        print("🔥 Error occurred:", str(e))
-        return make_response(jsonify({"error": str(e)}), 500)
+        print("🔥 Unexpected error:", str(e))
+        return make_response(f"⚠️ Internal server error: {str(e)}", 500)
 
 @app.route("/", methods=["GET"])
 def index():
