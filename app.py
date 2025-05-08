@@ -16,15 +16,21 @@ def evaluate_photo():
             print("❌ 'messages' field is missing.")
             return make_response(jsonify({"error": "'messages' field is missing."}), 400)
 
-        # Extract user data from the first message
+        # Extract user content blocks
         content_items = data["messages"][0]["content"]
         text_block = next(item for item in content_items if item["type"] == "text")
         image_block = next(item for item in content_items if item["type"] == "image_url")
 
-        user_prompt = text_block["text"]
-        image_url = image_block["image_url"]["url"]
+        user_prompt = text_block["text"].strip()
+        image_url = image_block["image_url"]["url"].strip()
 
-        # Step 1 – Describe the body visually (image only)
+        # Auto-trim excessive user input
+        if len(user_prompt) > 500:
+            user_prompt = user_prompt[:500] + "..."
+
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        # Step 1 – Image-based description
         step1_messages = [
             {
                 "role": "user",
@@ -43,31 +49,42 @@ def evaluate_photo():
             }
         ]
 
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         print("⏳ Calling GPT Step 1 (Image Description)...")
-        step1_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=step1_messages,
-            timeout=12
-        )
+        try:
+            step1_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=step1_messages,
+                timeout=12
+            )
+            visual_summary = step1_response.choices[0].message.content.strip()
+            print("📸 Step 1 image summary:", visual_summary)
+        except Exception as e:
+            print("🔥 GPT Step 1 failed:", str(e))
+            fallback = "⚠️ There was a problem analyzing the photo. Please try again with a clearer image."
+            return make_response(jsonify({"content": fallback}), 200)
 
-        visual_summary = step1_response.choices[0].message.content
-        print("📸 Step 1 image summary:", visual_summary)
-
-        # Check for refusal in Step 1
+        # Handle GPT refusal
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             fallback = "⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique in a fitness-appropriate context."
             print("🚫 Image was refused by GPT. Returning fallback.")
             return make_response(jsonify({"content": fallback}), 200)
 
-        # Step 2 – Final fitness evaluation using visual + metrics
+        # Step 2 – Full fitness evaluation
         step2_prompt = f"""This is a fitness evaluation request. Use the following image-based description to guide your analysis:
 "{visual_summary}"
 
 Now, also consider the user's input:
 - {user_prompt}
 
-Provide a medically realistic, strict, and goal-focused fitness evaluation. Address posture, body composition, fat loss, and muscle gain. Avoid disclaimers. Be direct, detailed, and serious in tone."""
+Provide a medically realistic, strict, and goal-focused fitness evaluation structured with the following sections:
+1. Overall Impression
+2. Health Risk Analysis
+3. Fat vs. Muscle Assessment
+4. Customized Goals
+5. Recommended Nutrition
+6. Next Steps
+
+Be direct, detailed, and serious in tone. Use bullet points where helpful. Avoid disclaimers or soft language."""
 
         step2_messages = [
             {
@@ -88,7 +105,7 @@ Provide a medically realistic, strict, and goal-focused fitness evaluation. Addr
                 messages=step2_messages,
                 timeout=12
             )
-            final_report = step2_response.choices[0].message.content
+            final_report = step2_response.choices[0].message.content.strip()
             print("✅ Final AI Report:", final_report)
         except Exception as e:
             print("🔥 GPT Step 2 failed:", str(e))
