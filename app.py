@@ -7,8 +7,8 @@ app = Flask(__name__)
 # Set your OpenAI API key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-@app.route('/evaluate', methods=['POST'])
-def evaluate():
+@app.route('/evaluate-photo', methods=['POST'])  # <-- Route corrected here
+def evaluate_photo():
     data = request.json
     image_url = data.get("image_url")
     age = data.get("age")
@@ -19,7 +19,7 @@ def evaluate():
     if not image_url:
         return jsonify({"error": "Image URL missing"}), 400
 
-    # Step 1: Image analysis
+    # Step 1: Analyze the image
     step1_prompt = [
         {"role": "system", "content": "You are a fitness assessment expert. Describe the body in the image in neutral, clinical detail (no assumptions)."},
         {"role": "user", "content": f"Describe the body in this image: {image_url}"}
@@ -31,7 +31,7 @@ def evaluate():
     )
     image_description = step1_response.choices[0].message.content.strip()
 
-    # Step 2: Full evaluation with user inputs
+    # Step 2: Create the full personalized report
     step2_prompt = [
         {"role": "system", "content": "You are a strict, medically realistic fitness and health coach creating a photo-based evaluation report."},
         {"role": "user", "content": f"""
@@ -51,7 +51,8 @@ Write a personalized body evaluation report based on the image and data. Use bul
 4. Customized Goals (generate if user left it blank)
 5. Recommended Nutrition
 6. Next Steps
-"""}]
+"""}
+    ]
 
     step2_response = openai.ChatCompletion.create(
         model="gpt-4o",
