@@ -73,8 +73,8 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # ✅ Step 2 – Final report (updated)
-        step2_prompt = f"""You are a professional AI fitness coach. Generate a structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid markdown. Make your language motivating, realistic, and tailored to the user's profile.
+        # ✅ Step 2 – Final Report (strict coach + motivational)
+        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid markdown. Speak like a strict but motivating coach. Acknowledge the user’s strengths clearly while giving no-nonsense advice.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -86,49 +86,49 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Overall Impression</strong><br>
-Evaluate the user's posture, build, visual fat distribution, and muscle tone. Mention balance, shape, and general aesthetic impression.<br><br>
+You’ve already built a solid foundation. The posture is mostly aligned, and there’s visible tone in key areas. Still, refinement is required. You must bring sharper definition to the midsection and upgrade upper-body balance to unlock full aesthetic potential.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
 <ul>
-<li>BMI of {bmi:.1f} categorizes the user as {'overweight' if bmi >= 25 else 'normal weight' if bmi >= 18.5 else 'underweight'}.</li>
-<li>Based on abdominal fat and posture, discuss potential risks like lower back pain, metabolic issues, or cardiovascular strain — especially for age {user_age or '?'}</li>
+<li>BMI of {bmi:.1f} puts you in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} category — not a red flag yet, but a warning.</li>
+<li>Excess fat in the abdomen combined with relaxed posture increases long-term risk of insulin resistance, back strain, and poor metabolic flexibility.</li>
 </ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
 <ul>
-<li><strong>Abdomen:</strong> Visibly stores fat — reduction here should be a top priority.</li>
-<li><strong>Upper Body:</strong> Chest and shoulders show tone, but hypertrophy can improve physique further.</li>
-<li><strong>Legs & Back:</strong> Evaluate muscular symmetry and identify whether development is adequate.</li>
+<li><strong>Abdomen:</strong> Clearly the main storage site for fat. You need to cut here first to improve health and visuals.</li>
+<li><strong>Chest & Shoulders:</strong> Muscle tone is present. Push hypertrophy on the upper chest to build width.</li>
+<li><strong>Legs/Back:</strong> Proportions are decent. Add hamstring and upper back volume to improve silhouette from the side.</li>
 </ul><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss:</strong> Based on weight {user_weight} kg and BMI {bmi:.1f}, aim to lose 6–8 kg to reach ideal range (BMI 23–24).</li>
-<li><strong>Muscle Gain:</strong> Focus on building the chest, delts, and upper back to expand the visual frame.</li>
-<li><strong>Posture:</strong> If any forward head, rounded shoulders, or pelvic tilt are present — suggest corrective strength training and stretching.</li>
+<li><strong>Fat Loss:</strong> Drop 6–8 kg to bring your BMI to a leaner 23–24 range.</li>
+<li><strong>Muscle Gain:</strong> Upper torso (shoulders/chest/back) needs mass. Focus on symmetry and taper.</li>
+<li><strong>Posture:</strong> Use posterior chain strength, core control, and mobility drills to fix any forward rounding or pelvic tilt.</li>
 </ul><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
 <ul>
-<li>Enhance upper torso width with shoulder and upper chest development to support V-taper.</li>
-<li>Incorporate glute/hamstring training for rear-chain support and side-profile symmetry.</li>
-<li>For men over 40, waist-to-shoulder taper and upright alignment are visually impactful goals — emphasize those.</li>
+<li>To widen your V-taper, train upper chest and shoulders with intensity and precision.</li>
+<li>Incorporate glute bridges, Romanian deadlifts, and hamstring curls weekly for posterior balance.</li>
+<li>Men over 40 gain visual power from upright, open posture and narrow waists — make these non-negotiable priorities.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Daily deficit: Reduce 500 kcal/day from baseline for sustainable fat loss.</li>
-<li>Macros: 1.8–2.2 g/kg protein, moderate carbs, healthy fats (avocado, nuts, olive oil).</li>
-<li>Foods: Prioritize chicken, eggs, oats, spinach, lentils — eliminate sugar-heavy snacks and fried items.</li>
+<li>Start with a 500 kcal/day deficit and hold steady for at least 3 weeks before adjusting.</li>
+<li>Macros: 1.8–2.2 g/kg protein, slow carbs (quinoa, oats), and fats from avocado, seeds, or olive oil.</li>
+<li>Cut all added sugar, processed snacks, and unnecessary evening calories. No excuses.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Training Plan:</strong> 3×/week resistance workouts with compound lifts.</li>
-<li><strong>Cardio:</strong> 2×/week fasted walking or HIIT (20–30 mins).</li>
-<li><strong>Tracking:</strong> Measure waist (cm), weight, and front/side photos weekly. Adjust if plateau lasts 3+ weeks.</li>
-<li><strong>Expectations:</strong> Most users see noticeable waist and shoulder changes within 4–5 weeks of consistency.</li>
-<li><strong>Supplements:</strong> Only add whey, creatine, or vitamin D3 if needed based on diet gaps.</li>
+<li><strong>Strength Training:</strong> 3×/week full-body lifts. Prioritize compound moves and progressive overload.</li>
+<li><strong>Cardio:</strong> Fasted morning walks or HIIT twice per week. No compromises.</li>
+<li><strong>Tracking:</strong> Log weight, waist (cm), and take weekly photos. Progress must be visible or the plan adjusts.</li>
+<li><strong>Results:</strong> Expect posture and shape changes in 3–5 weeks — if you follow the plan with discipline.</li>
+<li><strong>Supplements:</strong> Use whey, creatine, and D3 only if your diet lacks quality sources.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
