@@ -73,8 +73,8 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # ✅ Step 2 – Enhanced Report with Advanced Sections
-        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using <strong>, <br>, <ul>, <li> only (no markdown). Your tone should be clear, confident, direct, and medically realistic.
+        # ✅ Step 2 – Enhanced Report
+        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using <strong>, <br>, <ul>, <li> only (no markdown). Use strong, motivating, and individualized language.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -86,56 +86,57 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Overall Impression</strong><br>
-Describe posture, body shape, visible muscle tone, symmetry, and fat distribution.<br><br>
+Describe posture, body shape, muscle definition, symmetry, and fat distribution. Focus on strengths and areas needing immediate attention.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-Based on the BMI of {bmi:.1f} and age {user_age or '?'}:
 <ul>
-<li>Explain clearly whether BMI falls in normal, overweight, or obese range.</li>
-<li>Mention how this affects risk for cardiovascular, metabolic, or orthopedic issues (e.g., posture-related pain, diabetes risk).</li>
+<li>BMI of {bmi:.1f} places this client in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} range.</li>
+<li>Highlight risks for metabolic and orthopedic issues based on fat distribution and age ({user_age or '?'}).</li>
+<li>If posture is off or abdomen is protruding, explain how that can increase long-term health risk.</li>
 </ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
 <ul>
-<li><strong>Abdomen:</strong> fat presence or tone visibility</li>
-<li><strong>Chest/Shoulders:</strong> muscle size and symmetry</li>
-<li><strong>Back and Legs:</strong> development or imbalances</li>
+<li><strong>Abdomen:</strong> Prioritize for targeted fat reduction.</li>
+<li><strong>Upper Body:</strong> Evaluate shoulder symmetry and upper chest fullness.</li>
+<li><strong>Legs/Back:</strong> Comment on visible development or balance.</li>
 </ul><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss:</strong> Suggest realistic target (e.g., 5–10% body fat or kg range)</li>
-<li><strong>Muscle Development:</strong> Emphasize visible weak points (chest, arms, glutes, etc.)</li>
-<li><strong>Postural Corrections:</strong> Recommend rehab or mobility work if posture is off</li>
+<li><strong>Fat Loss:</strong> With a current weight of {user_weight} kg and BMI of {bmi:.1f}, aim to reduce 6–8 kg to reach a leaner range (BMI 23–24).</li>
+<li><strong>Muscle Gain:</strong> Focus on upper chest, back, and arms to enhance V-taper and fill weak points.</li>
+<li><strong>Posture:</strong> Improve core control and scapular alignment if slouch or pelvic tilt is observed.</li>
 </ul><br>
 
 <strong>What Still Needs Improvement</strong><br>
 <ul>
-<li>Highlight remaining weaknesses in symmetry, posture, or body proportions</li>
-<li>Call out any region still underdeveloped or with excess fat, even if minor</li>
-<li>Point out the pace of progress and areas needing more discipline or structure</li>
+<li>Abdominal fat remains a priority; reduction here will enhance waist-to-shoulder contrast.</li>
+<li>Chest development is improving, but upper chest fullness can better support posture and shape.</li>
+<li>Consistency in tracking and food discipline may be needed to break current plateau zones.</li>
 </ul><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
 <ul>
-<li>Explain how to visually enhance V-taper, chest fullness, or midsection tightening</li>
-<li>Include recommendations for exercises or angles to improve silhouette</li>
-<li>Reinforce shape-driven strategies for men 40+ (e.g. posture, shoulder rounding, glute activation)</li>
+<li>To sharpen appearance, build upper chest and shoulders to widen visual frame.</li>
+<li>Incorporate glute-focused strength work to improve lower-body proportions from both front and side angles.</li>
+<li>For men over 40, posture and waist taper offer the highest shape impact. Emphasize those areas.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li><strong>Calorie Plan:</strong> Recommend deficit or maintenance</li>
-<li><strong>Macros:</strong> Protein 1.6–2.2 g/kg, moderate carbs, healthy fats</li>
-<li><strong>Foods:</strong> Lean meats, greens, legumes, oats, avoid sugar and fried oils</li>
+<li>Daily intake: Start with 15% calorie deficit for safe fat loss (~500 kcal/day).</li>
+<li>Macros: Protein 1.8–2.0 g/kg, moderate carbs (focus oats, sweet potatoes), low-sugar fats (nuts, olive oil).</li>
+<li>Key Foods: Chicken breast, eggs, green vegetables, Greek yogurt, avoid sugary snacks or fried items.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Strength Training:</strong> 3×/week full-body with compound lifts</li>
-<li><strong>Cardio:</strong> 2×/week HIIT or fasted walking</li>
-<li><strong>Tracking:</strong> Weekly waist/weight/photos</li>
-<li><strong>Support:</strong> Optional whey, creatine, D3</li>
+<li>Strength Training: Follow a 3×/week full-body split with progressive overload and compound lifts.</li>
+<li>Cardio: Perform HIIT or 20–30 min fasted walking 2×/week.</li>
+<li>Tracking: Monitor waist (cm), weight, and weekly front/side photos. Adjust if stalled 3 weeks.</li>
+<li>Expect shape changes (waistline and posture) within 3–4 weeks of consistency.</li>
+<li>Supplements: Whey, creatine, and D3 may support results if diet lacks those sources.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
