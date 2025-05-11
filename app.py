@@ -33,7 +33,7 @@ def evaluate_photo():
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        # 🔒 Step 1 – Image analysis (UNCHANGED)
+        # 🔒 Step 1 – Image analysis (DO NOT TOUCH)
         step1_prompt_primary = (
             """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         )
@@ -73,7 +73,7 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # ✅ Step 2 – Enhanced evaluation
+        # ✅ Step 2 – Enhanced Report with Advanced Sections
         step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using <strong>, <br>, <ul>, <li> only (no markdown). Your tone should be clear, confident, direct, and medically realistic.
 
 <strong>User Profile</strong><br>
@@ -93,11 +93,9 @@ Based on the BMI of {bmi:.1f} and age {user_age or '?'}:
 <ul>
 <li>Explain clearly whether BMI falls in normal, overweight, or obese range.</li>
 <li>Mention how this affects risk for cardiovascular, metabolic, or orthopedic issues (e.g., posture-related pain, diabetes risk).</li>
-<li>Use assertive language, e.g. "this BMI requires intervention" if needed.</li>
 </ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-Evaluate fat vs muscle visibly across regions:
 <ul>
 <li><strong>Abdomen:</strong> fat presence or tone visibility</li>
 <li><strong>Chest/Shoulders:</strong> muscle size and symmetry</li>
@@ -106,24 +104,38 @@ Evaluate fat vs muscle visibly across regions:
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss:</strong> Suggest a realistic kg or % target based on BMI and visible abdominal fat.</li>
-<li><strong>Muscle Development:</strong> Recommend focus zones for physique balance (e.g., upper chest, arms, glutes).</li>
-<li><strong>Postural Corrections:</strong> Suggest mobility/flexibility work if slouching, pelvic tilt, or rounded shoulders present.</li>
+<li><strong>Fat Loss:</strong> Suggest realistic target (e.g., 5–10% body fat or kg range)</li>
+<li><strong>Muscle Development:</strong> Emphasize visible weak points (chest, arms, glutes, etc.)</li>
+<li><strong>Postural Corrections:</strong> Recommend rehab or mobility work if posture is off</li>
+</ul><br>
+
+<strong>What Still Needs Improvement</strong><br>
+<ul>
+<li>Highlight remaining weaknesses in symmetry, posture, or body proportions</li>
+<li>Call out any region still underdeveloped or with excess fat, even if minor</li>
+<li>Point out the pace of progress and areas needing more discipline or structure</li>
+</ul><br>
+
+<strong>Physique Refinement & Shape Optimization</strong><br>
+<ul>
+<li>Explain how to visually enhance V-taper, chest fullness, or midsection tightening</li>
+<li>Include recommendations for exercises or angles to improve silhouette</li>
+<li>Reinforce shape-driven strategies for men 40+ (e.g. posture, shoulder rounding, glute activation)</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li><strong>Calorie Plan:</strong> Recommend deficit or maintenance range if overweight.</li>
-<li><strong>Macros:</strong> Protein 1.6–2.2 g/kg, moderate carbs, healthy fats.</li>
-<li><strong>Foods:</strong> Lean meats, greens, legumes, oats, avoid sugar and fried oils.</li>
+<li><strong>Calorie Plan:</strong> Recommend deficit or maintenance</li>
+<li><strong>Macros:</strong> Protein 1.6–2.2 g/kg, moderate carbs, healthy fats</li>
+<li><strong>Foods:</strong> Lean meats, greens, legumes, oats, avoid sugar and fried oils</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Strength Training:</strong> 3×/week full-body split (push-pull-legs or A/B split) with progressive overload.</li>
-<li><strong>Conditioning:</strong> 2×/week cardio (HIIT or fasted walking).</li>
-<li><strong>Tracking:</strong> Measure waist (cm), weight, and take weekly photos. Adjust after 3 weeks if no progress.</li>
-<li><strong>Supplements:</strong> Whey, creatine, vitamin D3 if lifestyle or diet lacks support.</li>
+<li><strong>Strength Training:</strong> 3×/week full-body with compound lifts</li>
+<li><strong>Cardio:</strong> 2×/week HIIT or fasted walking</li>
+<li><strong>Tracking:</strong> Weekly waist/weight/photos</li>
+<li><strong>Support:</strong> Optional whey, creatine, D3</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
