@@ -73,7 +73,7 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # ✅ Step 2 – Enhanced Report with polished tone and structure
+        # ✅ Step 2 – Final report
         step2_prompt = f"""You are a professional AI fitness coach. Generate a structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid markdown. Make your language motivating, realistic, and tailored to the user's profile.
 
 <strong>User Profile</strong><br>
@@ -86,55 +86,49 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Overall Impression</strong><br>
-Summarize physique type, posture alignment, muscle visibility, symmetry, and fat distribution.<br><br>
+Summarize the individual’s visible shape, posture alignment, muscle tone, symmetry, and fat distribution. Use confident phrasing.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
 <ul>
 <li>BMI of {bmi:.1f} places this user in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} category.</li>
-<li>Fat accumulation in the abdominal area and a relaxed posture may raise risks for lower back pain, metabolic syndrome, or insulin resistance, especially at age {user_age or '?'}. These issues should be proactively addressed.</li>
+<li>Address specific risks for cardiovascular or orthopedic concerns based on abdominal fat or visible postural issues, especially for age {user_age or '?'}.</li>
 </ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
 <ul>
-<li><strong>Abdomen:</strong> Notable fat retention—targeted reduction here will improve both health and visual impact.</li>
-<li><strong>Upper Body:</strong> Muscle tone is visible but could benefit from improved upper chest and shoulder hypertrophy.</li>
-<li><strong>Legs & Back:</strong> Development may be proportionate, but shape and symmetry can improve with structured posterior chain work.</li>
+<li><strong>Abdomen:</strong> Assess the amount of fat present and whether it should be prioritized for visual and health reasons.</li>
+<li><strong>Upper Body:</strong> Evaluate shoulder and chest symmetry and suggest if more hypertrophy is needed.</li>
+<li><strong>Legs & Back:</strong> Analyze muscular balance and visual proportion from front and side views.</li>
 </ul><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss:</strong> Based on {user_weight} kg, aim for 6–8 kg reduction to enter the BMI 23–24 range.</li>
-<li><strong>Muscle Gain:</strong> Focus on chest, back, and arms to amplify upper body width and overall proportions.</li>
-<li><strong>Posture:</strong> Add mobility drills for scapular alignment, core bracing, and anterior pelvic tilt correction.</li>
-</ul><br>
-
-<strong>What Still Needs Improvement</strong><br>
-<ul>
-<li>Abdominal fat remains the primary limiter—continued focus here is essential.</li>
-<li>Upper chest fullness and shoulder width still need hypertrophy attention.</li>
-<li>Stay consistent with nutrition, sleep, and workout log to surpass plateau.</li>
+<li><strong>Fat Loss:</strong> With {user_weight} kg and BMI {bmi:.1f}, aim to reduce 6–8 kg to target BMI 23–24 range.</li>
+<li><strong>Muscle Gain:</strong> Prioritize upper chest, shoulders, and arms to improve shape and balance.</li>
+<li><strong>Posture:</strong> Recommend core training and scapular drills to fix anterior tilt or shoulder rounding.</li>
 </ul><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
 <ul>
-<li>To enhance the V-taper, build the upper back and shoulders more aggressively.</li>
-<li>Include glute and hamstring work to balance lower-body silhouette.</li>
-<li>For men over 40, posture correction and waist taper are key for strong, youthful presence.</li>
+<li>Widen the upper frame with shoulder and upper chest work to enhance V-taper.</li>
+<li>Add glute/hamstring training to support symmetry in side view.</li>
+<li>Posture and waist taper are top aesthetic priorities for men 40+ — reinforce these.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Daily deficit: ~500 kcal reduction from maintenance to support gradual fat loss.</li>
-<li>Macros: 1.8–2.0 g/kg protein, low glycemic carbs, healthy fats like avocado or olive oil.</li>
-<li>Suggested foods: chicken, eggs, oats, broccoli, Greek yogurt, eliminate fried items and sugary snacks.</li>
+<li>Daily intake: Begin with a ~500 kcal deficit from estimated maintenance.</li>
+<li>Macros: 1.8–2.0 g/kg protein, moderate carbs, and healthy fats like olive oil or nuts.</li>
+<li>Best foods: Chicken, salmon, eggs, oats, dark greens. Remove fried or sugary options.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Training Plan:</strong> 3×/week full-body strength workouts using compound movements.</li>
-<li><strong>Cardio:</strong> 2 sessions/week—HIIT or 30-minute morning walks.</li>
-<li><strong>Progress Monitoring:</strong> Log waist, weight, and front/side photos weekly. Expect visible results within 4 weeks.</li>
-<li><strong>Supplement Strategy:</strong> Add whey protein, creatine, and D3 only if nutrition is lacking.</li>
+<li>Strength: Train full-body 3×/week with progressive overload on compound movements.</li>
+<li>Conditioning: Perform 2×/week HIIT or 30 min fasted walks.</li>
+<li>Tracking: Weekly photos, waist (cm), weight. Adjust nutrition if stalled for 3+ weeks.</li>
+<li>Expected outcome: Noticeable visual changes in 4 weeks with consistent execution.</li>
+<li>Supplemental: Whey, creatine, D3 if not met via diet/lifestyle.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
