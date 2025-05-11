@@ -74,7 +74,8 @@ def evaluate_photo():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
         # ✅ Step 2 – With Physique Score
-        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid markdown. Your tone is that of a strict coach who gives honest, motivating feedback. Highlight strengths but give no-nonsense direction for improvement.
+        step2_prompt = f"""
+You are a professional AI fitness coach. Write a clean, structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid all markdown or inline styles. Do NOT use <div>. Use a strict but motivating tone. Start directly with the report — no greeting or signature.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -86,7 +87,7 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Physique Score (Out of 100)</strong><br>
-Assign a score between 0–100 based on body fat visibility, posture, proportionality, muscle definition, and BMI. Be strict but fair. Then justify the score in 2 sentences.<br><br>
+Assign a score between 0–100 based on body fat visibility, posture, proportionality, muscle definition, and BMI. Then justify the score in 1–2 short, clear sentences.<br><br>
 
 <strong>Overall Impression</strong><br>
 There’s clear potential here — posture is reasonably aligned, some muscular tone is visible, and proportions are decent. But don’t settle. To stand out visually and improve long-term health, fat loss around the midsection and upper-body shaping must become top priorities.<br><br>
