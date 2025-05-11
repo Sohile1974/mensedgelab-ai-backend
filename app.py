@@ -26,7 +26,6 @@ def evaluate_photo():
         if len(user_prompt) > 500:
             user_prompt = user_prompt[:500] + "..."
 
-        # Clean and extract metrics
         user_age = int(re.search(r"user is (\d+)", user_prompt, re.IGNORECASE).group(1)) if re.search(r"user is (\d+)", user_prompt, re.IGNORECASE) else None
         user_height = int(re.search(r"(\d+)\s*cm", user_prompt).group(1)) if re.search(r"(\d+)\s*cm", user_prompt) else None
         user_weight = int(re.search(r"weighs (\d+)", user_prompt, re.IGNORECASE).group(1)) if re.search(r"weighs (\d+)", user_prompt, re.IGNORECASE) else None
@@ -34,7 +33,7 @@ def evaluate_photo():
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        # Step 1 – Describe image
+        # 🔒 Step 1 – Image analysis (UNCHANGED)
         step1_prompt_primary = (
             """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         )
@@ -74,8 +73,8 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # Step 2 – Generate HTML report
-        step2_prompt = f"""You are an advanced AI fitness expert. Generate a detailed HTML fitness evaluation based on this visual analysis and personal data.
+        # ✅ Step 2 – Enhanced evaluation
+        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using <strong>, <br>, <ul>, <li> only (no markdown). Your tone should be clear, confident, direct, and medically realistic.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -87,34 +86,44 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Overall Impression</strong><br>
-Summarize the person's physique, posture, visible fat distribution, and symmetry.<br><br>
+Describe posture, body shape, visible muscle tone, symmetry, and fat distribution.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-Evaluate based on BMI and age. Address cardiovascular, metabolic, or orthopedic risks like abdominal obesity, posture issues, or joint strain.<br><br>
+Based on the BMI of {bmi:.1f} and age {user_age or '?'}:
+<ul>
+<li>Explain clearly whether BMI falls in normal, overweight, or obese range.</li>
+<li>Mention how this affects risk for cardiovascular, metabolic, or orthopedic issues (e.g., posture-related pain, diabetes risk).</li>
+<li>Use assertive language, e.g. "this BMI requires intervention" if needed.</li>
+</ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-Compare fat/muscle across abdomen, chest, arms, back, and legs. Note underdeveloped or dominant areas.<br><br>
+Evaluate fat vs muscle visibly across regions:
+<ul>
+<li><strong>Abdomen:</strong> fat presence or tone visibility</li>
+<li><strong>Chest/Shoulders:</strong> muscle size and symmetry</li>
+<li><strong>Back and Legs:</strong> development or imbalances</li>
+</ul><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss Target:</strong> Suggest % body fat or kg reduction with main focus zones.</li>
-<li><strong>Muscle Gain:</strong> Advise target areas based on visual shape.</li>
-<li><strong>Mobility/Posture:</strong> Recommend exercises if poor posture or pelvic tilt is seen.</li>
+<li><strong>Fat Loss:</strong> Suggest a realistic kg or % target based on BMI and visible abdominal fat.</li>
+<li><strong>Muscle Development:</strong> Recommend focus zones for physique balance (e.g., upper chest, arms, glutes).</li>
+<li><strong>Postural Corrections:</strong> Suggest mobility/flexibility work if slouching, pelvic tilt, or rounded shoulders present.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Daily intake range (deficit/surplus) based on weight.</li>
-<li>Macros: Protein 1.6–2.2g/kg, moderate carbs, healthy fats.</li>
-<li>Foods: chicken, fish, quinoa, oats, dark greens. Avoid sugar, refined oils.</li>
+<li><strong>Calorie Plan:</strong> Recommend deficit or maintenance range if overweight.</li>
+<li><strong>Macros:</strong> Protein 1.6–2.2 g/kg, moderate carbs, healthy fats.</li>
+<li><strong>Foods:</strong> Lean meats, greens, legumes, oats, avoid sugar and fried oils.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Strength Training:</strong> 3x/week full-body progressive resistance plan.</li>
-<li><strong>Cardio:</strong> 2 HIIT or walk sessions/week.</li>
-<li><strong>Monitoring:</strong> Track photos, waist, and weight weekly. Adjust if plateaued after 3 weeks.</li>
-<li><strong>Support:</strong> Optional whey, creatine, and D3 depending on diet.</li>
+<li><strong>Strength Training:</strong> 3×/week full-body split (push-pull-legs or A/B split) with progressive overload.</li>
+<li><strong>Conditioning:</strong> 2×/week cardio (HIIT or fasted walking).</li>
+<li><strong>Tracking:</strong> Measure waist (cm), weight, and take weekly photos. Adjust after 3 weeks if no progress.</li>
+<li><strong>Supplements:</strong> Whey, creatine, vitamin D3 if lifestyle or diet lacks support.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
