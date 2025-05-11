@@ -73,9 +73,8 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # ✅ Step 2 – With Physique Score
-        step2_prompt = f"""
-You are a professional AI fitness coach. Write a clean, structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid all markdown or inline styles. Do NOT use <div>. Use a strict but motivating tone. Start directly with the report — no greeting or signature.
+        # ✅ Step 2 – With Clean Formatting and Physique Score
+        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using only <strong>, <br>, <ul>, <li>. Do NOT use markdown, numbered lists, or divs. Format each section cleanly using consistent structure.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -87,52 +86,54 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 {visual_summary}<br><br>
 
 <strong>Physique Score (Out of 100)</strong><br>
-Assign a score between 0–100 based on body fat visibility, posture, proportionality, muscle definition, and BMI. Then justify the score in 1–2 short, clear sentences.<br><br>
+Assign a score between 0–100 based on visible fat, posture, symmetry, muscle definition, and BMI. Be strict but constructive. Justify the score in 1–2 sentences.<br><br>
 
 <strong>Overall Impression</strong><br>
-There’s clear potential here — posture is reasonably aligned, some muscular tone is visible, and proportions are decent. But don’t settle. To stand out visually and improve long-term health, fat loss around the midsection and upper-body shaping must become top priorities.<br><br>
+<ul>
+<li>Evaluate posture, visual tone, and body proportions.</li>
+<li>Identify key areas where improvement will produce biggest impact visually and medically.</li>
+</ul><br>
 
 <strong>Health Risk Analysis</strong><br>
 <ul>
-<li>BMI of {bmi:.1f} places you in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} category. That’s manageable, but not optimal.</li>
-<li>Abdominal fat and posture-related imbalances can raise risks for insulin resistance, lower back strain, and poor metabolic flexibility — especially for age {user_age or '?'}. Act early.</li>
+<li>BMI of {bmi:.1f} places you in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} category.</li>
+<li>Abdominal fat and postural imbalances raise risks for insulin resistance and back strain — act early.</li>
 </ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
 <ul>
-<li><strong>Abdomen:</strong> Primary fat zone — trimming it will visibly sharpen your frame and reduce health risk.</li>
-<li><strong>Chest & Shoulders:</strong> Muscle definition is a good start. Push hypertrophy to create upper-body width.</li>
-<li><strong>Back & Legs:</strong> Functional but needs refinement. Focus on posterior chain lifts for better proportion and posture.</li>
+<li><strong>Abdomen:</strong> Fat reduction here is top priority.</li>
+<li><strong>Chest & Shoulders:</strong> Muscle tone exists — build on it to improve visual width and symmetry.</li>
+<li><strong>Back & Legs:</strong> Add strength training to build posterior support and balance.</li>
 </ul><br>
 
 <strong>Customized Goals</strong><br>
 <ul>
-<li><strong>Fat Loss:</strong> Drop 6–8 kg to bring BMI to 23–24 — this range gives both visual sharpness and metabolic safety.</li>
-<li><strong>Muscle Gain:</strong> Prioritize upper chest, shoulders, and lats for a wider, stronger profile.</li>
-<li><strong>Posture:</strong> Strengthen glutes and upper back. Mobilize hip flexors and thoracic spine to fix rounding or tilt.</li>
+<li><strong>Fat Loss:</strong> Drop 6–8 kg to reach BMI 23–24.</li>
+<li><strong>Muscle Gain:</strong> Prioritize shoulders, upper chest, and lats.</li>
+<li><strong>Posture:</strong> Mobilize hips and strengthen glutes to fix anterior tilt.</li>
 </ul><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
 <ul>
-<li>Train chest and delts to exaggerate your V-taper and upper-body dominance.</li>
-<li>Add Romanian deadlifts, glute bridges, and reverse lunges to strengthen and define lower posterior chain.</li>
-<li>Postural strength + visible taper = youthfulness and authority. These are your target visual traits at 40+.</li>
+<li>Focus on upper torso width for stronger V-taper.</li>
+<li>Train hamstrings and glutes to complete back profile.</li>
+<li>Postural symmetry + muscle balance = visual authority.</li>
 </ul><br>
 
 <strong>Recommended Nutrition</strong><br>
 <ul>
-<li>Create a ~500 kcal daily deficit. Hold steady for 3–4 weeks before making changes.</li>
-<li>Macros: 1.8–2.2 g/kg protein, low GI carbs (quinoa, oats), healthy fats (avocado, nuts, olive oil).</li>
-<li>Strictly avoid sugars, oils, fried foods, and excess evening snacking. Discipline wins.</li>
+<li>Calorie deficit of ~500/day. Stay consistent for 3–4 weeks before adjusting.</li>
+<li>Macros: 1.8–2.2 g/kg protein, moderate carbs, healthy fats.</li>
+<li>Avoid sugars, oils, and fried foods. Track everything.</li>
 </ul><br>
 
 <strong>Next Steps</strong><br>
 <ul>
-<li><strong>Training:</strong> 3×/week resistance training — compound lifts only. Log your sets.</li>
-<li><strong>Cardio:</strong> 2×/week: 25 min fasted walk or HIIT. Pick one and stay consistent.</li>
-<li><strong>Track:</strong> Weekly photos, weight, and waist (cm). Adjust nutrition if no change in 3 weeks.</li>
-<li><strong>Expect:</strong> Waist taper and posture gains in 4–5 weeks. Earn it.</li>
-<li><strong>Supplements:</strong> Add whey, creatine, or vitamin D3 only if missing from diet.</li>
+<li>Train full-body 3×/week using compound lifts.</li>
+<li>Do fasted walks or HIIT 2×/week — be consistent.</li>
+<li>Track waist (cm), weight, and weekly photos.</li>
+<li>Expect visible change in posture and waistline within 4–5 weeks.</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
