@@ -43,15 +43,9 @@ def evaluate_photo():
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        # Step 1 – Image analysis (Structured Output)
+        # Step 1 – Image analysis (DO NOT TOUCH)
         step1_prompt_primary = (
-            """Describe the person’s physique in this image for a fitness evaluation. 
-Return the analysis in the following format using <strong> and <br> tags:
-<strong>Posture:</strong> ...<br>
-<strong>Muscle Tone:</strong> ...<br>
-<strong>Fat Distribution:</strong> ...<br>
-Keep the tone factual and professional. Do not speculate or make personal comments. 
-Focus only on what is visible in terms of posture, muscle, and fat distribution."""
+            """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         )
         step1_prompt_fallback = (
             "Describe the person in this image, including general body type, stance, posture, and muscle/fat visibility. Keep the tone factual and observational only."
