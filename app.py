@@ -81,7 +81,7 @@ def evaluate_photo():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
         # Step 2 – Final Report
-        step2_prompt = f"""You are a professional AI fitness coach. Write a structured HTML report using only <strong>, <br>, <ul>, <li>. Avoid markdown. Your tone is that of a strict coach who gives honest, motivating feedback. Highlight strengths but give no-nonsense direction for improvement.
+        step2_prompt = f"""You are a professional AI fitness coach. Based on the visual summary and user data below, write a customized HTML report using <strong>, <br>, <ul>, <li> (no markdown). Structure it strictly with the following sections:
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -90,60 +90,37 @@ Weight: {user_weight or 'Not provided'} kg<br>
 BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 
 <strong>Image Summary</strong><br>
-{visual_summary}<br><br>
+Break it into 3 lines:<br>
+1. Muscularity: Describe muscle tone/definition and symmetry.<br>
+2. Fat Distribution: Focus on where fat is visible (abdomen, sides, chest, etc).<br>
+3. Posture & Shape: Evaluate alignment, stance, proportions.<br><br>
 
 <strong>Physique Score (Out of 100)</strong><br>
-Assign a score between 0–100 based on body fat visibility, posture, proportionality, muscle definition, and BMI. Be strict but fair. Then justify the score in 2 sentences.<br><br>
+Assign a number from 0–100 based on physique quality and BMI. Explain why in 2 sentences.<br><br>
 
 <strong>Overall Impression</strong><br>
-There’s clear potential here — posture is reasonably aligned, some muscular tone is visible, and proportions are decent. But don’t settle. To stand out visually and improve long-term health, fat loss around the midsection and upper-body shaping must become top priorities.<br><br>
+1–2 lines summarizing the overall potential and what is most urgent to improve.<br><br>
 
 <strong>Health Risk Analysis</strong><br>
-<ul>
-<li>BMI of {bmi:.1f} places you in the {'overweight' if bmi >= 25 else 'normal' if bmi >= 18.5 else 'underweight'} category. That’s manageable, but not optimal.</li>
-<li>Abdominal fat and posture-related imbalances can raise risks for insulin resistance, lower back strain, and poor metabolic flexibility — especially for age {user_age or '?'}. Act early.</li>
-</ul><br>
+List 2–3 bullet points about how current body composition or posture might pose risks.<br><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-<ul>
-<li><strong>Abdomen:</strong> Primary fat zone — trimming it will visibly sharpen your frame and reduce health risk.</li>
-<li><strong>Chest & Shoulders:</strong> Muscle definition is a good start. Push hypertrophy to create upper-body width.</li>
-<li><strong>Back & Legs:</strong> Functional but needs refinement. Focus on posterior chain lifts for better proportion and posture.</li>
-</ul><br>
+Customize observations by zone (abs, chest, back, legs) in 3–4 bullet points.<br><br>
 
 <strong>Customized Goals</strong><br>
-<ul>
-<li><strong>Fat Loss:</strong> Drop 6–8 kg to bring BMI to 23–24 — this range gives both visual sharpness and metabolic safety.</li>
-<li><strong>Muscle Gain:</strong> Prioritize upper chest, shoulders, and lats for a wider, stronger profile.</li>
-<li><strong>Posture:</strong> Strengthen glutes and upper back. Mobilize hip flexors and thoracic spine to fix rounding or tilt.</li>
-</ul><br>
+Give 3 specific goals based on the user's physique.<br><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
-<ul>
-<li>Train chest and delts to exaggerate your V-taper and upper-body dominance.</li>
-<li>Add Romanian deadlifts, glute bridges, and reverse lunges to strengthen and define lower posterior chain.</li>
-<li>Postural strength + visible taper = youthfulness and authority. These are your target visual traits at 40+.</li>
-</ul><br>
+Give 3–4 training recommendations focused on improving shape/symmetry.<br><br>
 
 <strong>Recommended Nutrition</strong><br>
-<ul>
-<li>Create a ~500 kcal daily deficit. Hold steady for 3–4 weeks before making changes.</li>
-<li>Macros: 1.8–2.2 g/kg protein, low GI carbs (quinoa, oats), healthy fats (avocado, nuts, olive oil).</li>
-<li>Strictly avoid sugars, oils, fried foods, and excess evening snacking. Discipline wins.</li>
-</ul><br>
+Give actionable guidelines on calorie intake, macros, and foods to avoid.<br><br>
 
 <strong>Next Steps</strong><br>
-<ul>
-<li><strong>Training:</strong> 3×/week resistance training — compound lifts only. Log your sets.</li>
-<li><strong>Cardio:</strong> 2×/week: 25 min fasted walk or HIIT. Pick one and stay consistent.</li>
-<li><strong>Track:</strong> Weekly photos, weight, and waist (cm). Adjust nutrition if no change in 3 weeks.</li>
-<li><strong>Expect:</strong> Waist taper and posture gains in 4–5 weeks. Earn it.</li>
-<li><strong>Supplements:</strong> Add whey, creatine, or vitamin D3 only if missing from diet.</li>
-</ul><br>
-
+Give 3–5 checklist-style habits they must follow to improve physique.
+<br><br>
 <strong>Disclaimer</strong><br>
-This report is generated for educational purposes only. It does not constitute medical advice or replace consultation with a licensed professional.
-"""
+This report is generated for educational purposes only. It does not constitute medical advice or replace consultation with a licensed professional."""
 
         print("⏳ Calling GPT Step 2...")
         try:
