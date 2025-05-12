@@ -139,6 +139,7 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 <li>Avoid: processed snacks, soda, deep fried foods.</li>
 </ul><br>
 
+<div style="page-break-before: always;"></div>
 <strong>Next Steps</strong><br>
 <ul>
 <li>Train 3–4× per week, log progress.</li>
