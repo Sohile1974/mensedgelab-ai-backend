@@ -7,8 +7,8 @@ from datetime import datetime
 import uuid
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "data")  # dynamic local folder
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)  # ensure folder exists
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "data")
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 PDF_BASE_URL = "https://mensedgelab-ai-backend.onrender.com/files"
 
@@ -43,7 +43,6 @@ def evaluate_photo():
 
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        # Step 1 – Image analysis (DO NOT TOUCH)
         step1_prompt_primary = (
             """Describe the person’s physique in this image for a fitness evaluation. This is a professional submission intended for body composition analysis. Focus on posture, muscle tone, and fat distribution. Do not make assumptions about identity or context. Do not refuse unless the image is clearly inappropriate or unviewable."""
         )
@@ -80,8 +79,7 @@ def evaluate_photo():
         if "i'm sorry" in visual_summary.lower() or "cannot" in visual_summary.lower():
             return make_response("⚠️ The submitted photo could not be evaluated. Please ensure it is well-lit, does not include sensitive content, and clearly shows your physique.", 200)
 
-        # Step 2 – Final Report
-        step2_prompt = f"""You are a professional AI fitness coach. Based on the visual summary and user data below, write a customized HTML report using <strong>, <br>, <ul>, <li> (no markdown). Structure it strictly with the following sections:
+        step2_prompt = f"""You are a professional AI fitness coach. Based on the visual summary and user data below, write a customized HTML report using <strong>, <br>, <ul>, <li> (no markdown). Make each section clear, dynamic, and formatted with bullet points. Include specific numbers, suggestions, and practical advice.
 
 <strong>User Profile</strong><br>
 Age: {user_age or 'Not provided'}<br>
@@ -90,35 +88,66 @@ Weight: {user_weight or 'Not provided'} kg<br>
 BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 
 <strong>Image Summary</strong><br>
-Break it into 3 lines:<br>
-1. Muscularity: Describe muscle tone/definition and symmetry.<br>
-2. Fat Distribution: Focus on where fat is visible (abdomen, sides, chest, etc).<br>
-3. Posture & Shape: Evaluate alignment, stance, proportions.<br><br>
+<ul>
+<li><strong>Muscularity:</strong> Describe visible muscle tone and symmetry.</li>
+<li><strong>Fat Distribution:</strong> Focus on fat accumulation zones (abdomen, chest, etc).</li>
+<li><strong>Posture & Shape:</strong> Comment on stance, spine alignment, and visual balance.</li>
+</ul><br>
 
 <strong>Physique Score (Out of 100)</strong><br>
-Assign a number from 0–100 based on physique quality and BMI. Explain why in 2 sentences.<br><br>
+<ul>
+<li>Give a score from 0–100.</li>
+<li>Explain what influenced the score (fat %, definition, proportions).</li>
+</ul><br>
 
 <strong>Overall Impression</strong><br>
-1–2 lines summarizing the overall potential and what is most urgent to improve.<br><br>
+<ul>
+<li>Summarize current condition in 1–2 lines.</li>
+<li>Mention what is most urgent or promising.</li>
+</ul><br>
 
 <strong>Health Risk Analysis</strong><br>
-List 2–3 bullet points about how current body composition or posture might pose risks.<br><br>
+<ul>
+<li>Include risks like insulin resistance, lower back strain, or visceral fat.</li>
+<li>Comment on BMI category and related concerns.</li>
+</ul><br>
 
 <strong>Fat vs. Muscle Assessment</strong><br>
-Customize observations by zone (abs, chest, back, legs) in 3–4 bullet points.<br><br>
+<ul>
+<li><strong>Abs:</strong> Describe visibility or fat retention.</li>
+<li><strong>Chest:</strong> State current tone or fat deposits.</li>
+<li><strong>Back:</strong> Comment on strength, symmetry.</li>
+<li><strong>Legs:</strong> Tone, balance, or missing development.</li>
+</ul><br>
 
 <strong>Customized Goals</strong><br>
-Give 3 specific goals based on the user's physique.<br><br>
+<ul>
+<li>Give 3 concrete goals with numbers (e.g. reduce body fat %, waist size).</li>
+</ul><br>
 
 <strong>Physique Refinement & Shape Optimization</strong><br>
-Give 3–4 training recommendations focused on improving shape/symmetry.<br><br>
+<ul>
+<li>Give 3–4 training tips (e.g. incline dumbbell press, RDLs, lat pulldowns).</li>
+<li>Mention how these improve proportions or posture.</li>
+</ul><br>
 
 <strong>Recommended Nutrition</strong><br>
-Give actionable guidelines on calorie intake, macros, and foods to avoid.<br><br>
+<ul>
+<li>Suggest daily kcal target (e.g. 2000–2200 kcal).</li>
+<li>Macros: 40% protein, 35% carbs, 25% fat.</li>
+<li>Example foods: chicken breast, oats, olive oil, sweet potatoes, Greek yogurt.</li>
+<li>Avoid: processed snacks, soda, deep fried foods.</li>
+</ul><br>
 
 <strong>Next Steps</strong><br>
-Give 3–5 checklist-style habits they must follow to improve physique.
-<br><br>
+<ul>
+<li>Train 3–4× per week, log progress.</li>
+<li>Do 25 min cardio twice per week (HIIT or fasted walk).</li>
+<li>Track weekly weight, waist, and progress photo.</li>
+<li>Drink 2.5–3 liters water/day and sleep 7+ hours.</li>
+<li>Adjust intake if no changes after 3 weeks.</li>
+</ul><br>
+
 <strong>Disclaimer</strong><br>
 This report is generated for educational purposes only. It does not constitute medical advice or replace consultation with a licensed professional."""
 
