@@ -149,6 +149,14 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 <li>Adjust intake if no changes after 3 weeks.</li>
 </ul><br>
 
+<strong>Take It Further</strong><br>
+If you’re ready to transform your physique and health, visit <a href="https://mensedgelab.com" target="_blank">https://mensedgelab.com</a><br>
+<ul>
+<li>Customized Workout Plans</li>
+<li>Tailored Nutrition Guidance</li>
+<li>Progress Tracking Tools</li>
+</ul><br>
+
 <strong>Disclaimer</strong><br>
 This report is generated for educational purposes only. It does not constitute medical advice or replace consultation with a licensed professional."""
 
