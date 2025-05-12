@@ -139,7 +139,7 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 <li>Avoid: processed snacks, soda, deep fried foods.</li>
 </ul><br>
 
-<div style="page-break-before: always;"></div>
+<div style=\"page-break-before: always;\"></div>
 <strong>Next Steps</strong><br>
 <ul>
 <li>Train 3–4× per week, log progress.</li>
@@ -149,12 +149,13 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 <li>Adjust intake if no changes after 3 weeks.</li>
 </ul><br>
 
+<hr>
 <strong>Take It Further</strong><br>
-If you’re ready to transform your physique and health, visit <a href="https://mensedgelab.com" target="_blank">https://mensedgelab.com</a><br>
+If you’re ready to transform your physique and health, visit <a href=\"https://mensedgelab.com\" target=\"_blank\">https://mensedgelab.com</a><br>
 <ul>
-<li>Customized Workout Plans</li>
-<li>Tailored Nutrition Guidance</li>
-<li>Progress Tracking Tools</li>
+<li>➤ Customized Workout Plans</li>
+<li>➤ Tailored Nutrition Guidance</li>
+<li>➤ Progress Tracking Tools</li>
 </ul><br>
 
 <strong>Disclaimer</strong><br>
