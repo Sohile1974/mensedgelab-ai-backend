@@ -5,12 +5,19 @@ import re
 import pdfkit
 from datetime import datetime
 import uuid
+import cloudinary
+import cloudinary.uploader
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "data")
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-PDF_BASE_URL = "https://mensedgelab-ai-backend.onrender.com/files"
+# Initialize Cloudinary (values must be set as Render environment variables)
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
 
 @app.route("/files/<filename>", methods=["GET"])
 def serve_file(filename):
@@ -175,9 +182,11 @@ This report is generated for educational purposes only. It does not constitute m
             pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             pdfkit.from_string(final_report, pdf_path, options={"encoding": "UTF-8"})
 
-            public_url = f"{PDF_BASE_URL}/{filename}"
-            print("📄 PDF Generated:", public_url)
+            print("📤 Uploading PDF to Cloudinary...")
+            upload_result = cloudinary.uploader.upload(pdf_path, resource_type="raw", folder="mensedge-reports")
+            public_url = upload_result.get("secure_url")
 
+            print("📄 Cloudinary PDF URL:", public_url)
             return jsonify({"pdf_url": public_url})
 
         except Exception as e:
