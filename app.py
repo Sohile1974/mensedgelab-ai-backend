@@ -183,7 +183,12 @@ This report is generated for educational purposes only. It does not constitute m
             pdfkit.from_string(final_report, pdf_path, options={"encoding": "UTF-8"})
 
             print("📤 Uploading PDF to Cloudinary...")
-            upload_result = cloudinary.uploader.upload(pdf_path, resource_type="raw", folder="mensedge-reports")
+            upload_result = cloudinary.uploader.upload(
+                pdf_path,
+                resource_type="raw",
+                type="upload",  # ✅ Only this line modified
+                folder="mensedge-reports"
+            )
             public_url = upload_result.get("secure_url")
 
             print("📄 Cloudinary PDF URL:", public_url)
