@@ -38,7 +38,7 @@ def evaluate_photo():
         image_block = next(item for item in content_items if item["type"] == "image_url")
 
         user_prompt = text_block["text"].strip()
-        image_url = image_block["image_url"]["url"].strip()
+        image_url = image_block["image_url"]["url"].replace("=s256-c", "").strip()
 
         if len(user_prompt) > 500:
             user_prompt = user_prompt[:500] + "..."
@@ -146,7 +146,7 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 <li>Avoid: processed snacks, soda, deep fried foods.</li>
 </ul><br>
 
-<div style=\"page-break-before: always;\"></div>
+<div style="page-break-before: always;"></div>
 <strong>Next Steps</strong><br>
 <ul>
 <li>Train 3–4× per week, log progress.</li>
@@ -158,7 +158,7 @@ BMI: {bmi:.1f} {'(calculated)' if bmi else ''}<br><br>
 
 <hr>
 <strong>Take It Further</strong><br>
-If you’re ready to transform your physique and health, visit <a href=\"https://mensedgelab.com\" target=\"_blank\">https://mensedgelab.com</a><br>
+If you’re ready to transform your physique and health, visit <a href="https://mensedgelab.com" target="_blank">https://mensedgelab.com</a><br>
 <ul>
 <li>➤ Customized Workout Plans</li>
 <li>➤ Tailored Nutrition Guidance</li>
@@ -186,7 +186,7 @@ This report is generated for educational purposes only. It does not constitute m
             upload_result = cloudinary.uploader.upload(
                 pdf_path,
                 resource_type="raw",
-                type="upload",  # ✅ Only this line modified
+                type="upload",
                 folder="mensedge-reports"
             )
             public_url = upload_result.get("secure_url")
