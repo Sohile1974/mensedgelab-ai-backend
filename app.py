@@ -27,7 +27,11 @@ def serve_file(filename):
 def evaluate_photo():
     try:
         print("✅ Received POST request to /evaluate-photo")
-        data = request.get_json(force=True)
+        try:
+            data = request.get_json(force=True)
+        except Exception as e:
+            print("⚠️ JSON force parse failed, trying fallback...")
+            data = request.json or request.form.to_dict()
         print("🧹 Received data:", data)
 
         if not data or "messages" not in data:
